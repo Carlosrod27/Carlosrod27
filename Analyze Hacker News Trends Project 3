@@ -1,0 +1,172 @@
+```sql
+/*Hacker News is a popular website run by Y Combinator. 
+It’s widely known by people in the tech industry as a 
+community site for sharing news, showing off projects, 
+asking questions, among other things.
+
+In this project, you will be working with a table named 
+hacker_news that contains stories from Hacker News since 
+its launch in 2007. It has the following columns:
+
+title: the title of the story
+user: the user who submitted the story
+score: the score of the story
+timestamp: the time of the story
+url: the link of the story*/
+
+SELECT 
+  *
+FROM
+  hacker_news;
+  
+ SELECT 
+  title,
+  score
+FROM 
+  hacker_news
+  ORDER BY score DESC
+  LIMIT 5;
+
+/*ecent studies have found that online forums tend to be 
+dominated by a small percentage of their users (1-9-90 Rule).
+
+Is this true of Hacker News?
+
+Is a small percentage of Hacker News submitters taking the majority of the points?
+
+First, find the total score of all the stories.      6366*/
+SELECT 
+  SUM(score) AS 'Total Score'
+FROM Hacker_news;
+
+/*Next, we need to pinpoint the users who have accumulated 
+a lot of points across their stories.
+
+Find the individual users who have gotten combined scores 
+of more than 200, and their combined scores. */
+SELECT 
+  User,
+  SUM(score) AS 'Score'
+FROM 
+  hacker_news
+  GROUP BY User
+  HAVING SUM(score) > 200
+  ORDER BY 2 DESC;
+
+/*.
+Then, we want to add these users’ scores together and divide 
+by the total to get the percentage.
+
+Add their scores together and divide it by the total sum. Like so:*/
+SELECT 
+  (517+309+304+282);
+
+SELECT 
+  SUM(score) AS 'Total Score'
+FROM Hacker_news;
+
+SELECT 
+  (1412/ 6366.0);
+
+/*Oh no! While we are looking at the power users, some users are 
+rickrolling — tricking readers into clicking on a link to a funny 
+video and claiming that it links to information about coding.
+
+The url of the video is:
+
+https://www.youtube.com/watch?v=dQw4w9WgXcQ
+
+How many times has each offending user posted this link?*/
+SELECT 
+  user,
+  COUNT(url) 'Total times posted'
+FROM
+  hacker_news
+  GROUP BY user
+  HAVING url = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
+  ORDER BY COUNT(url) DESC;
+ 
+
+/*Hacker News stories are essentially links that take users to other websites.
+Which of these sites feed Hacker News the most:
+
+GitHub, Medium, or New York Times?
+
+First, we want to categorize each story based on their source.
+
+We can do this using a CASE statement:*/
+SELECT
+  user,
+  CASE
+    WHEN url LIKE '%github.com%' THEN 'GITHUB'
+    WHEN url LIKE '%medium.com%' THEN 'MEDIUM'
+    WHEN url LIKE '%NewYorkTimes.com%' THEN 'NEW YORK TIMES'
+    ELSE 'ANOTHER SOURCE'
+  END AS 'SOURCE'
+FROM
+  hacker_news;
+
+/*Next, build on the previous query:
+
+Add a column for the number of stories from each URL using COUNT().
+
+Also, GROUP BY the CASE statement.*/
+SELECT
+  user,
+  CASE
+    WHEN url LIKE '%github.com%' THEN 'GITHUB'
+    WHEN url LIKE '%medium.com%' THEN 'MEDIUM'
+    WHEN url LIKE '%NewYorkTimes.com%' THEN 'NEW YORK TIMES'
+    ELSE 'ANOTHER SOURCE'
+  END AS 'SOURCE',
+  COUNT(url) AS 'number of stories from each URL'
+FROM
+  hacker_news
+  GROUP BY  2
+  ORDER BY 3 DESC;
+  
+/*Notice that the values are formatted like:
+2018-05-08T12:30:00Z
+
+If you ignore the T and Z, the format is:
+YYYY-MM-DD HH:MM:SS*/
+SELECT 
+  timestamp
+FROM 
+  hacker_news
+LIMIT 10;
+
+/*This returns the hour, HH, of the timestamp column!*/
+SELECT 
+  timestamp,
+  strftime('%H', timestamp)
+FROM 
+  hacker_news
+GROUP BY 1
+LIMIT 20;
+
+/*Let’s write a query that returns three columns:
+
+The hours of the timestamp
+The average score for each hour
+The count of stories for each hour*/ 
+SELECT 
+  strftime('%H', timestamp) AS 'Hours of the timestamp',
+  AVG(score) AS 'The average score for each hour',
+  COUNT(url) AS 'The count of stories for each hour'
+FROM 
+  hacker_news
+GROUP BY 1
+ORDER BY 1;
+
+/*What are the best hours to post a story on Hacker News?*/  
+SELECT 
+  strftime('%H', timestamp) AS 'Hours of the timestamp',
+  ROUND(AVG(score),2) AS 'The average score for each hour',
+  COUNT(url) AS 'The count of stories for each hour'
+FROM 
+  hacker_news
+  WHERE strftime('%H', timestamp) IS NOT NULL
+GROUP BY 1
+ORDER BY 2 DESC;
+```
