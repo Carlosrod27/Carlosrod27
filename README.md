@@ -1,6 +1,6 @@
 - 👋 Hi, I’m @Carlosrod27
 - 👀 I’m interested in Data Analysis, SQL, Python and Data Visualisation.
-- 🌱 I’m currently learning SQL, Tableu and Database Managment.
+- 🌱 I’m currently learning SQL, Tableu, Python and Database Managment.
 - 📫 How to reach me: carlosrodm27@gmail.com
 
 <!---
