@@ -1,0 +1,167 @@
+/*We’ll be working with a database of three tables. The books table is created from the top selling books of all time. The customers and orders tables are randomly generated.
+
+The goal is to make this database more effitien
+
+Lets get familiar with the tables first*/
+
+SELECT *
+FROM customers 
+LIMIT 10;
+
+SELECT *
+FROM orders
+LIMIT 10;
+
+SELECT *
+FROM books
+LIMIT 10;
+
+/*Lets examine the indexes that already exist on the three tables*/
+
+SELECT *
+FROM pg_indexes
+WHERE tablename = 'customers';
+
+SELECT *
+FROM pg_indexes
+WHERE tablename = 'orders';
+
+SELECT *
+FROM pg_indexes
+WHERE tablename = 'books';
+
+
+/* Lets say my marketing team request regular information on sales figures, but they are only interested in sales of greater than 18 units sold in an order to see if there would be a benefit in targeted marketing*
+
+I Would Check the time it tatkes to run My query first*/
+
+EXPLAIN ANALYZE SELECT *
+FROM books
+WHERE sales_in_millions > 18;
+
+/*Planning time: 0.155 ms
+Execution time: 0.042 ms*/
+
+/* Let built an index to check if we can improve the search time for this specific query*/
+
+CREATE INDEX books_sales_in_millions_over_18_idx 
+ON books (sales_in_millions)
+WHERE sales_in_millions > 18;
+
+/* Check the time it tatkes to run My query now*/
+
+EXPLAIN ANALYZE SELECT *
+FROM books
+WHERE sales_in_millions > 18;
+
+/*Planning time: 0.171 ms
+Execution time: 0.039 ms*/
+/*
+
+NOT MUCH of an improvemnt
+
+DROP INDEX books_sales_in_millions_over_18_idx;*/
+
+/* with this look at the tables I notice ther is no primry key  and since its been inserted a ton of data from a live system i have to organize this in the customers table so lets add one primary key and index to cluster this table and organize it*/
+
+EXPLAIN ANALYZE SELECT *
+FROM customers
+WHERE customer_id < 100;
+
+ALTER TABLE customers
+ADD CONSTRAINT customers_pkey
+PRIMARY KEY (customer_id);
+
+/*Check the added Primary Key*/
+SELECT *
+FROM pg_indexes
+WHERE tablename = 'customers';
+
+/*cluster the index*/
+CLUSTER customers USING customers_pkey;
+
+/* Check id its more eficient*/
+EXPLAIN ANALYZE SELECT *
+FROM customers
+WHERE customer_id < 100;
+
+/*final table organized*/
+SELECT *
+FROM customers 
+LIMIT 10;
+
+/*Regular searches are done on the combination of customer_id and book_id on the orders table.
+
+Lest evaluate if this is a good candidate for creating an index*/
+
+EXPLAIN ANALYZE 
+SELECT customer_id, book_id
+FROM orders;
+
+/*Planning time: 0.014 ms
+Execution time: 16.961 ms*/
+
+CREATE INDEX orders_customer_id_orders_id_idx 
+ON orders (customer_id, book_id);
+
+EXPLAIN ANALYZE 
+SELECT customer_id, book_id
+FROM orders;
+/*Planning time: 0.080 ms
+Execution time: 14.459 ms*/
+
+/*looking at the query it looks like is not clear information and we should add quantity ordered as well. I will drop my previous index and recreate it to improve it for this new information.*/
+
+DROP INDEX orders_customer_id_orders_id_idx;
+
+/*Lest evaluate if this is a good candidate for creating an index*/
+EXPLAIN ANALYZE 
+SELECT customer_id, book_id,quantity
+FROM orders;
+/*Planning time: 0.039 ms
+Execution time: 14.915 ms*/
+
+CREATE INDEX orders_customer_id_orders_id_quantity_idx 
+ON orders (customer_id, book_id, quantity);
+
+EXPLAIN ANALYZE 
+SELECT customer_id, book_id,quantity
+FROM orders;
+/*Planning time: 0.098 ms
+Execution time: 19.423 ms
+
+adding this column to the index for this purpose is not beneficial*/
+
+DROP INDEX orders_customer_id_orders_id_quantity_idx;
+
+/*notice the largest amount of time is spent calculating the total price the customer spent on each order. Let us set up a test.*/
+
+EXPLAIN ANALYZE 
+SELECT *
+FROM orders
+WHERE quantity * price_base > 100 ;
+
+/*Planning time: 0.055 ms
+Execution time: 33.765 ms
+
+Lets see if we can have a better Execution time*/
+
+CREATE INDEX orders_quantity_price_base_over_100_idx 
+ON orders (quantity, price_base)
+WHERE quantity * price_base > 100;
+
+EXPLAIN ANALYZE 
+SELECT *
+FROM orders
+WHERE quantity * price_base > 100 ;
+
+/*Planning time: 0.108 ms
+Execution time: 12.527 ms
+
+Much better*/
+
+/*Checking all my indexes*/
+SELECT *
+FROM pg_indexes
+WHERE tablename IN ('customers', 'books', 'orders')
+ORDER BY tablename, indexname;
