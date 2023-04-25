@@ -1,54 +1,49 @@
 CREATE TABLE restaurant (
-  id INT PRIMARY KEY,
- name VARCHAR (20),
- description VARCHAR (100),
- rating DECIMAL,
- telephone VARCHAR(10),
- hours VARCHAR (100)
+    id INT PRIMARY KEY,
+    name VARCHAR(20),
+    description VARCHAR(100),
+    rating DECIMAL,
+    telephone VARCHAR(10),
+    hours VARCHAR(100)
 );
-
 
 CREATE TABLE address (
-  id INT PRIMARY KEY,
-  street_number VARCHAR (10),
-  street_name VARCHAR (20),
-  city VARCHAR (20),
-  state VARCHAR (15),
-  google_map_link VARCHAR (50),
-  restaurant_id INT REFERENCES restaurant(id) UNIQUE
+    id INT PRIMARY KEY,
+    street_number VARCHAR(10),
+    street_name VARCHAR(20),
+    city VARCHAR(20),
+    state VARCHAR(15),
+    google_map_link VARCHAR(50),
+    restaurant_id INT REFERENCES restaurant (id)
 );
-
 
 CREATE TABLE category (
-  id VARCHAR(2) PRIMARY KEY,
-  name VARCHAR(20),
-  description VARCHAR(200)
+    id VARCHAR(2) PRIMARY KEY,
+    name VARCHAR(20),
+    description VARCHAR(200)
 );
-
 
 CREATE TABLE dish (
-  id INT PRIMARY KEY,
-  name VARCHAR (50),
-  description VARCHAR(200),
-  hot_and_spicy BOOLEAN
+    id INT PRIMARY KEY,
+    name VARCHAR(50),
+    description VARCHAR(200),
+    hot_and_spicy BOOLEAN
 );
-
 
 CREATE TABLE review (
-  id INT PRIMARY KEY,
-  rating DECIMAL,
-  description VARCHAR (100),
-  date DATE,
-  restaurant_id INT REFERENCES restaurant(id)
+    id INT PRIMARY KEY,
+    rating DECIMAL,
+    description VARCHAR(100),
+    date DATE,
+    restaurant_id INT REFERENCES restaurant (id)
 );
 
-CREATE TABLE categories_dishes(
-  category_id VARCHAR(2) REFERENCES category(id),
-  dish_id INT REFERENCES dish(id),
-  PRIMARY KEY (category_id, dish_id),
-  price DECIMAL 
+CREATE TABLE categories_dishes (
+    category_id VARCHAR(2) REFERENCES category (id),
+    dish_id INT REFERENCES dish (id),
+    PRIMARY KEY (category_id , dish_id),
+    price DECIMAL
 );
-
 
 /* 
  *--------------------------------------------
@@ -252,37 +247,73 @@ SELECT * FROM dish;
 SELECT * FROM review;
 SELECT * FROM categories_dishes;
 
-
 /*Type in a query that displays the restaurant name, its 
 address (street number and name) and telephone number.*/
 
-SELECT
-  restaurant.name AS Restaurant_name,
-  address.street_number AS Street_number,
-  address.street_name AS Street_name,
-  restaurant.telephone AS Telephone
+SELECT 
+    restaurant.name AS Restaurant_name,
+    address.street_number AS Street_number,
+    address.street_name AS Street_name,
+    restaurant.telephone AS Telephone
 FROM
-  restaurant
-  JOIN
-  address ON restaurant.id = address.restaurant_id;
+    restaurant
+        JOIN
+    address ON restaurant.id = address.restaurant_id;
 
 /*Display the rating as best_rating*/
-SELECT MAX(rating) AS best_rating
-  FROM review;
+SELECT 
+    MAX(rating) AS best_rating
+FROM
+    review;
+
+/*display a dish name, its price and category sorted by the dish name*/
+SELECT 
+    dish.name AS dish_name,
+    categories_dishes.price AS price,
+    category.name AS category
+FROM
+    dish
+        JOIN
+    categories_dishes ON dish.id = categories_dishes.dish_id
+        JOIN
+    category ON categories_dishes.category_id = category.id
+ORDER BY categories_dishes.price DESC;
+
+/*display all the spicy dishes, their prices and category.*/
+SELECT 
+    dish.name AS spicy_dish_name,
+    category.name AS category,
+    categories_dishes.price AS price
+FROM
+    dish
+        JOIN
+    categories_dishes ON dish.id = categories_dishes.dish_id
+        JOIN
+    category ON categories_dishes.category_id = category.id
+WHERE
+    dish.hot_and_spicy = 'true'
+ORDER BY categories_dishes.price DESC;
 
 /**/
 
+SELECT 
+    dish.name AS dish_name,
+    COUNT(categories_dishes.dish_id) AS dish_count
+FROM
+    dish
+        JOIN
+    categories_dishes ON dish.id = categories_dishes.dish_id
+GROUP BY dish.id
+HAVING COUNT(categories_dishes.dish_id) > 1;
 
 /**/
 
-
-/**/
-
-
-/**/
-
-
-/**/
-
-
-/**/
+ SELECT 
+    rating AS best_rating, description
+FROM
+    review
+WHERE
+    rating = (SELECT 
+            MAX(rating) AS best_rating
+        FROM
+            review);
